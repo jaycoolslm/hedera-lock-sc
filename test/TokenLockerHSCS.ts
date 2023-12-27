@@ -73,7 +73,8 @@ describe("TokenLocker", function () {
           new ContractFunctionParameters()
             .addAddress(tokenAddress)
             .addInt64(AMOUNT_TO_LOCK)
-            .addUint256(timeInS),
+            .addUint256(timeInS)
+            .addBool(true),
           Number(PAYMENT)
         )
       ).to.equal(22);

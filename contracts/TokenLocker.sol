@@ -103,12 +103,12 @@ contract TokenLocker is ReentrancyGuard, HederaTokenService {
 
     function approveAllowance(address token, uint256 amount) external {
         int res = HederaTokenService.approve(token, address(this), amount);
-        require(res == 22 || res == 194, "Approve allowance failed");
+        require(res == 22, "Approve allowance failed");
         emit TokenAllowanceApproved(token, amount);
     }
 
     // Function to lock tokens for a specified duration (in seconds)
-    function lockToken(address token, int64 amount, uint256 lockDurationInSeconds) external payable {
+    function lockToken(address token, int64 amount, uint256 lockDurationInSeconds, bool needsAssociating) external payable {
         // Ensures that the HBAR sent with the transaction is greater than or equal to the required fee.
         require(msg.value >= fee, "Insufficient payment");
 
@@ -125,7 +125,9 @@ contract TokenLocker is ReentrancyGuard, HederaTokenService {
         require(_lockedTokens[msg.sender][token].amount == 0, "You have already locked this token");
 
         // associates token to itself
-        associateToken(token);
+        if (needsAssociating) {
+            associateToken(token);
+        }
 
         // Calls the safeTransferToken function from SafeHTS library to transfer the tokens from the user to the contract.
         SafeHTS.safeTransferToken(token, msg.sender, address(this), amount);
