@@ -2,10 +2,12 @@ import {
   AccountAllowanceApproveTransaction,
   AccountId,
   Client,
+  ContractCallQuery,
   ContractCreateFlow,
   ContractExecuteTransaction,
   ContractFunctionParameters,
   ContractId,
+  Hbar,
   PrivateKey,
   TokenCreateTransaction,
   TokenId,
@@ -13,7 +15,9 @@ import {
 
 const accountId = process.env.OWNER_ID as string;
 let privateKey = PrivateKey.fromStringECDSA(process.env.OWNER_KEY as string);
-const client = Client.forTestnet().setOperator(accountId, privateKey);
+const client = Client.forTestnet()
+  .setOperator(accountId, privateKey)
+  .setDefaultMaxQueryPayment(new Hbar(2));
 
 export const deployContract = async (bytecode: string) => {
   const tx = new ContractCreateFlow().setGas(1_000_000).setBytecode(bytecode);
@@ -24,6 +28,19 @@ export const deployContract = async (bytecode: string) => {
     throw new Error("Contract creation failed");
   }
   return receipt.contractId.toString();
+};
+
+export const executeContractQuery = async (
+  contractId: string,
+  functionName: string,
+  functionParams?: ContractFunctionParameters
+) => {
+  const tx = new ContractCallQuery()
+    .setContractId(contractId)
+    .setGas(1_000_000)
+    .setFunction(functionName, functionParams);
+  const query = await tx.execute(client);
+  return query;
 };
 
 export const executeContractCall = async (
@@ -66,7 +83,7 @@ export const approveAllowance = async (
   const tokenId = TokenId.fromSolidityAddress(tokenAddress);
   const tx = new AccountAllowanceApproveTransaction().approveTokenAllowance(
     tokenId,
-    process.env.OWNER_ID as string,
+    accountId,
     contractId,
     amount
   );

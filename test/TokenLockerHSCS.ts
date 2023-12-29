@@ -9,15 +9,14 @@ import {
   delay,
   executeContractCall,
   deployContract,
+  executeContractQuery,
 } from "../lib/utils";
 import { ContractFunctionParameters } from "@hashgraph/sdk";
 import tokenLocker from "../artifacts/contracts/TokenLocker.sol/TokenLocker.json";
 
 let ownerAddress: string;
-let capitilisedOwnerAddress: string;
 let tokenId: string;
 let tokenAddress: string;
-let capitilisedTokenAddress: string;
 let contractId: string;
 
 // CONSTANTS
@@ -29,6 +28,7 @@ describe("TokenLocker", function () {
     it("Should deploy TokenLocker", async function () {
       this.timeout(60000);
       contractId = await deployContract(tokenLocker.bytecode);
+      console.log("Contract ID:", contractId);
     });
   });
 
@@ -39,6 +39,8 @@ describe("TokenLocker", function () {
     });
 
     // it("Should associate token with locker contract", async function () {
+    //   console.log("contractId", contractId);
+    //   console.log("tokenId", tokenId);
     //   expect(
     //     await executeContractCall(
     //       contractId,
@@ -64,7 +66,6 @@ describe("TokenLocker", function () {
     it("Should lock tokens", async function () {
       const [owner] = await ethers.getSigners();
       ownerAddress = owner.address;
-      capitilisedOwnerAddress = capitiliseAddress(ownerAddress);
       const timeInS = 15;
       expect(
         await executeContractCall(
@@ -95,6 +96,18 @@ describe("TokenLocker", function () {
         errorCount++;
       }
       expect(errorCount).to.equal(1);
+    });
+
+    it("Should get locked token details", async function () {
+      const query = await executeContractQuery(
+        contractId,
+        "getLockedDetails",
+        new ContractFunctionParameters().addAddress(tokenAddress)
+      );
+      const lockedAmount = query.getInt64(0).toString();
+      const remainingLockDuration = query.getUint256(0).toString();
+      console.log("lockedAmount", lockedAmount);
+      console.log("remainingLockDuration", remainingLockDuration);
     });
 
     it("Should successfully withdraw tokens", async function () {
