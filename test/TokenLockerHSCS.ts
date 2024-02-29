@@ -110,6 +110,31 @@ describe("TokenLocker", function () {
       console.log("remainingLockDuration", remainingLockDuration);
     });
 
+    it("Should increase time by 30 seconds", async function () {
+      expect(
+        await executeContractCall(
+          contractId,
+          "increaseLockDuration",
+          new ContractFunctionParameters()
+            .addAddress(tokenAddress)
+            .addUint256(30),
+          Number(PAYMENT)
+        )
+      ).to.equal(22);
+    });
+
+    it("Should get locked token details", async function () {
+      const query = await executeContractQuery(
+        contractId,
+        "getLockedDetails",
+        new ContractFunctionParameters().addAddress(tokenAddress)
+      );
+      const lockedAmount = query.getInt64(0).toString();
+      const remainingLockDuration = query.getUint256(0).toString();
+      console.log("lockedAmount", lockedAmount);
+      console.log("remainingLockDuration", remainingLockDuration);
+    });
+
     it("Should successfully withdraw tokens", async function () {
       await delay(15000);
       expect(

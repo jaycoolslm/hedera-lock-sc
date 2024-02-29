@@ -177,9 +177,17 @@ contract TokenLocker is ReentrancyGuard, HederaTokenService {
         // Ensures that the user has locked tokens of the same type.
         require( _lockedTokens[msg.sender][token].amount > 0, "You have not locked this token" );
 
-        // Updates the locked token duration for the user and token by adding the additional duration.
-        _lockedTokens[msg.sender][token].lockDuration = _lockedTokens[msg.sender][token].lockDuration + additionalDurationInSeconds;
+        // Retrieves the locked token amount for the user and token.
+        LockedToken memory lockedToken = _lockedTokens[msg.sender][token];
+        // Calculates the remaining lock duration if the lock duration has not passed.
+        if (block.timestamp < lockedToken.lockTimestamp + lockedToken.lockDuration) {
+            uint256 remainingLockDuration = lockedToken.lockDuration + lockedToken.lockTimestamp - block.timestamp;
+            require(remainingLockDuration < additionalDurationInSeconds, "Increased duration should be greater than the remaining duration");
+        }
 
+        _lockedTokens[msg.sender][token].lockTimestamp = block.timestamp;
+        _lockedTokens[msg.sender][token].lockDuration = additionalDurationInSeconds;
+        
         // Emits a LockDurationIncreased event with the user's address, token address, and the additional lock duration.
         emit LockDurationIncreased(msg.sender, token, additionalDurationInSeconds);
     }
